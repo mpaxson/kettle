@@ -1,4 +1,36 @@
 {
+  // Run formatters on save
+  "editor.formatOnSave": true,
 
+  // Organize imports automatically
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true,
+    "source.fixAll": true
+  },
 
+  // Go extension settings
+  "[go]": {
+    "editor.defaultFormatter": "golang.go", // official Go extension
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+
+  // Use goimports instead of gofmt
+  "go.formatTool": "goimports",
+
+  // Linter config
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast"],
+
+  // Optional: enable staticcheck for deeper analysis
+  "go.toolsManagement.autoUpdate": true,
+  "go.useLanguageServer": true,
+  "gopls": {
+    "ui.semanticTokens": true,
+    "staticcheck": true,
+    "completeUnimported": true,
+    "usePlaceholders": true
+  }
 }
