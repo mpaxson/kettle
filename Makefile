@@ -14,7 +14,7 @@ VERSION ?= $(shell git describe --tags --always --dirty)
 LDFLAGS = -ldflags="-X main.version=${VERSION}"
 
 # Phony targets are not real files
-.PHONY: all build run test clean deps
+.PHONY: all build run test clean deps install docs lint
 
 # Default target
 all: build
@@ -43,6 +43,10 @@ clean:
 	@echo "Cleaning..."
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
+
+docs:
+	@echo "Generating documentation..."
+	go run ./src/internal/tools/docgen -out ./docs/cli -format markdown
 
 lint:
 	@echo "Linting..."
