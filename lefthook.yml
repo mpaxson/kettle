@@ -1,8 +1,7 @@
-prepare-commit-msg:
+pre-commit:
+  parallel: true
   commands:
-    update-version:
-      run: make update_version
-    add-version-file:
-      run: git add src/internal/version/version.go
-    ammend-commit:
-      run: git commit --amend --no-edit
+    go-fmt:
+      run: go fmt ./...
+    golangci-lint:
+      run: make lint

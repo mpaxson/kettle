@@ -11,7 +11,10 @@ BINARY_NAME := $(shell basename "$(CURDIR)")
 # Setup the -ldflags option for go build here, conditionally
 # adding the version information.
 VERSION ?= $(shell git describe --tags --always --dirty)
-LDFLAGS = -ldflags="-X main.version=${VERSION}"
+LDFLAGS = -ldflags="-X main.version=${VERSION} \
+-X 'src/internal/version/version.Version=$(git describe --tags --always)' \
+                   -X 'src/internal/version/version.Commit=$(git rev-parse --short HEAD)' \
+                   -X 'src/internal/version/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)'""
 
 # Phony targets are not real files
 .PHONY: all build run test clean deps install docs lint
@@ -22,7 +25,10 @@ all: build
 # Build the binary
 build: deps
 	@echo "Building $(BINARY_NAME)..."
-	$(GOBUILD) -o bin/$(BINARY_NAME) $(LDFLAGS) .
+	$(GOBUILD) -o bin/$(BINARY_NAME) $(LDFLAGS) . \ 
+	-ldflags "-X 'src/internal/version/version.Version=$(git describe --tags --always)' \
+                   -X 'src/internal/version/version.Commit=$(git rev-parse --short HEAD)' \
+                   -X 'src/internal/version/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
 
 # Run the application
 run: build

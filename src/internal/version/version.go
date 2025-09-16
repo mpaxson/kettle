@@ -3,6 +3,6 @@ package version
 
 var (
 	Version   = "0.1.0"
-	Commit    = "a1d702c"
-	BuildDate = "2025-09-16T15:50:59Z"
+	Commit    = "0eb135b"
+	BuildDate = "2025-09-16T15:58:05Z"
 )

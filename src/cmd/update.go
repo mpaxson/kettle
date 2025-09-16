@@ -142,7 +142,10 @@ del "%%~f0"
 
 	// Start the batch script in the background
 	cmd := exec.Command("cmd", "/C", "start", "/B", batchScript)
-	cmd.Start()
+	if err := cmd.Start(); err != nil {
+		helpers.PrintError("Failed to start update script", err)
+		return err
+	}
 
 	helpers.PrintInfo("Update script started. The binary will be replaced after this process exits.")
 	return nil
