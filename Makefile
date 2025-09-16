@@ -10,11 +10,15 @@ BINARY_NAME := $(shell basename "$(CURDIR)")
 
 # Setup the -ldflags option for go build here, conditionally
 # adding the version information.
-VERSION ?= $(shell git describe --tags --always --dirty)
-LDFLAGS = -ldflags="-X main.version=${VERSION} \
--X 'src/internal/version/version.Version=$(git describe --tags --always)' \
-                   -X 'src/internal/version/version.Commit=$(git rev-parse --short HEAD)' \
-                   -X 'src/internal/version/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)'""
+VERSION := $(shell git describe --tags --always)
+COMMIT  := $(shell git rev-parse --short HEAD)
+DATE    := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+VERSION_MODULE := github.com/mpaxson/kettle/src/internal/version
+LDFLAGS := -ldflags "\
+    -X main.version=$(VERSION) \
+    -X $(VERSION_MODULE).Version=$(VERSION) \
+    -X $(VERSION_MODULE).Commit=$(COMMIT) \
+    -X $(VERSION_MODULE).BuildDate=$(DATE)"
 
 # Phony targets are not real files
 .PHONY: all build run test clean deps install docs lint
@@ -25,13 +29,10 @@ all: build
 # Build the binary
 build: deps
 	@echo "Building $(BINARY_NAME)..."
-	$(GOBUILD) -o bin/$(BINARY_NAME) $(LDFLAGS) . \ 
-	-ldflags "-X 'src/internal/version/version.Version=$(git describe --tags --always)' \
-                   -X 'src/internal/version/version.Commit=$(git rev-parse --short HEAD)' \
-                   -X 'src/internal/version/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
-
+	$(GOBUILD) -o bin/$(BINARY_NAME) $(LDFLAGS) .
 # Run the application
 run: build
+	@echo "Version: $(VERSION), Commit: $(COMMIT), Date: $(DATE)"
 	@echo "Running $(BINARY_NAME)..."
 	./bin/$(BINARY_NAME)
 
@@ -58,9 +59,7 @@ lint:
 	@echo "Linting..."
 	golangci-lint run
 
-update_version:
-	@echo "Updating version..."
-	go run ./src/internal/scripts/update_version.go
+
 dev-tools:
 	go install github.com/evilmartians/lefthook@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
