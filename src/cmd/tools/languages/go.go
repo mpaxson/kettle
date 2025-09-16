@@ -106,7 +106,7 @@ var goLintInstallCmd = &cobra.Command{
 			return
 
 		}
-		err := helpers.RunCmd("go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest")
+		err := helpers.RunCmd("curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0")
 		if err != nil {
 			helpers.PrintError("Failed to install golangci-lint", err)
 			return

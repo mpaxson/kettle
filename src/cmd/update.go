@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,14 +9,22 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/mpaxson/kettle/src/cmd/helpers"
 	"github.com/spf13/cobra"
 )
 
 const (
-	githubReleasesURL = "https://github.com/mpaxson/kettle/releases/latest/download/kettle"
+	githubReleasesURL    = "https://github.com/mpaxson/kettle/releases/latest/download/kettle"
+	githubAPIReleasesURL = "https://api.github.com/repos/mpaxson/kettle/releases/latest"
 )
+
+// GitHubRelease represents the structure of a GitHub release API response
+type GitHubRelease struct {
+	TagName string `json:"tag_name"`
+	Name    string `json:"name"`
+}
 
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
@@ -31,6 +40,27 @@ by using a temporary file and atomic replacement.`,
 
 func updateKettle() error {
 	helpers.PrintInfo("Checking for latest kettle version...")
+
+	// Get latest release information from GitHub API
+	latestRelease, err := getLatestRelease()
+	if err != nil {
+		helpers.PrintError("Failed to fetch latest release information", err)
+		return err
+	}
+
+	latestVersion := strings.TrimPrefix(latestRelease.TagName, "v")
+
+	// Get clean version without 'v' prefix
+	currentVersion := strings.TrimPrefix(Version, "v")
+
+	helpers.PrintInfo(fmt.Sprintf("Current version: v%s", currentVersion))
+	helpers.PrintInfo(fmt.Sprintf("Latest version: v%s", latestVersion)) // Compare versions
+	if compareVersions(currentVersion, latestVersion) >= 0 {
+		helpers.PrintSuccess("You are already running the latest version!")
+		return nil
+	}
+
+	helpers.PrintInfo("A newer version is available. Starting update...")
 
 	// Get the current executable path
 	currentExe, err := os.Executable()
@@ -53,7 +83,11 @@ func updateKettle() error {
 	// Make the temporary file executable
 	if err := os.Chmod(tmpFile, 0755); err != nil {
 		helpers.PrintError("Failed to make downloaded binary executable", err)
-		os.Remove(tmpFile) // Clean up
+		err := os.Remove(tmpFile) // Clean up
+		if err != nil {
+			helpers.PrintError("Failed to remove temporary file", err)
+			return err
+		}
 		return err
 	}
 
@@ -62,14 +96,99 @@ func updateKettle() error {
 	// Use atomic replacement to handle the case where the binary is in use
 	if err := atomicReplace(currentExe, tmpFile); err != nil {
 		helpers.PrintError("Failed to replace current binary", err)
-		os.Remove(tmpFile) // Clean up
+		err := os.Remove(tmpFile) // Clean up
+		if err != nil {
+			helpers.PrintError("Failed to remove temporary file", err)
+			return err
+		}
 		return err
 	}
 
-	helpers.PrintSuccess("Kettle has been successfully updated to the latest version!")
+	helpers.PrintSuccess(fmt.Sprintf("Kettle has been successfully updated from v%s to v%s!", currentVersion, latestVersion))
 	helpers.PrintInfo("You may need to restart your terminal session for changes to take effect.")
 
 	return nil
+}
+
+// getLatestRelease fetches the latest release information from GitHub API
+func getLatestRelease() (*GitHubRelease, error) {
+	resp, err := http.Get(githubAPIReleasesURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch release information: %w", err)
+	}
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			helpers.PrintError("Failed to close response body", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GitHub API returned status: %s", resp.Status)
+	}
+
+	var release GitHubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return nil, fmt.Errorf("failed to parse release information: %w", err)
+	}
+
+	return &release, nil
+}
+
+// compareVersions compares two semantic version strings
+// Returns: -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2
+func compareVersions(v1, v2 string) int {
+	// Handle dev versions
+	if v1 == "dev" && v2 != "dev" {
+		return -1 // dev is always older than any released version
+	}
+	if v1 != "dev" && v2 == "dev" {
+		return 1 // any released version is newer than dev
+	}
+	if v1 == "dev" && v2 == "dev" {
+		return 0 // dev == dev
+	}
+
+	// Parse version components
+	parts1 := parseVersion(v1)
+	parts2 := parseVersion(v2)
+
+	// Compare each component
+	for i := 0; i < 3; i++ {
+		if parts1[i] < parts2[i] {
+			return -1
+		}
+		if parts1[i] > parts2[i] {
+			return 1
+		}
+	}
+
+	return 0
+}
+
+// parseVersion parses a version string into [major, minor, patch] integers
+func parseVersion(version string) [3]int {
+	parts := [3]int{0, 0, 0}
+	versionParts := strings.Split(version, ".")
+
+	for i, part := range versionParts {
+		if i >= 3 {
+			break
+		}
+		// Simple integer parsing - ignoring errors and defaulting to 0
+		if val := 0; len(part) > 0 {
+			for _, char := range part {
+				if char >= '0' && char <= '9' {
+					val = val*10 + int(char-'0')
+				} else {
+					break // Stop at first non-digit
+				}
+			}
+			parts[i] = val
+		}
+	}
+
+	return parts
 }
 
 // downloadFile downloads a file from the given URL and saves it to the specified path
@@ -86,8 +205,13 @@ func downloadFile(filepath string, url string) error {
 	if err != nil {
 		return fmt.Errorf("failed to download file: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
 
+		err := resp.Body.Close()
+		if err != nil {
+			helpers.PrintError("Failed to close response body", err)
+		}
+	}()
 	// Check server response
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("bad status: %s", resp.Status)
