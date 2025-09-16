@@ -1,3 +1,4 @@
+// Package tools provides commands for managing various development tools.
 package tools
 
 import (

@@ -1,3 +1,4 @@
+// Package sets provides commands for managing sets of tools.
 package sets
 
 import (

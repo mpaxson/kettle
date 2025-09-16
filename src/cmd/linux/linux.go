@@ -1,3 +1,4 @@
+// Package linux implements the linux command.
 package linux
 
 import (

@@ -1,3 +1,4 @@
+// Package helpers provides utility functions for OS detection and command execution.
 package helpers
 
 import (
@@ -129,8 +130,8 @@ func RunCmd(command string) error {
 }
 
 var (
-    sudoPassword string
-    sudoOnce     sync.Once
+	sudoPassword string
+	sudoOnce     sync.Once
 )
 
 func getSudoPassword() (string, error) {

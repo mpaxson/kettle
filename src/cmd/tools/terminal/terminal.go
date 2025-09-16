@@ -1,3 +1,4 @@
+// Package terminal provides commands for managing terminal tools.
 package terminal
 
 import (

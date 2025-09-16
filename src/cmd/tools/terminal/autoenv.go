@@ -1,5 +1,6 @@
 package terminal
 
+// autoenv.go
 import (
 	"fmt"
 	"os/exec"

@@ -1,5 +1,5 @@
 package terminal
-
+// ghostty.go
 import (
 	"fmt"
 	"os/exec"

@@ -1,5 +1,6 @@
 package terminal
 
+// install kitty packages
 import (
 	"fmt"
 

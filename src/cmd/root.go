@@ -1,6 +1,8 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+Copyright © 2025 kettleofketchup
 */
+
+// Package cmd implements the command-line interface for the application.
 package cmd
 
 import (
@@ -50,5 +52,3 @@ func init() {
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-
