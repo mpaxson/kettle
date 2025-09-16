@@ -48,7 +48,7 @@ var versionCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-	
+
 	// Add version flag to root command (Cobra built-in pattern)
 	rootCmd.Version = GetVersion()
 }
