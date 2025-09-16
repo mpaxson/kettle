@@ -14,7 +14,7 @@ VERSION := $(shell git describe --tags --always)
 COMMIT  := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 VERSION_MODULE := github.com/mpaxson/kettle/src/internal/version
-LDFLAGS := -ldflags "\
+LDFLAGS := -ldflags "-s -w \
     -X main.version=$(VERSION) \
     -X $(VERSION_MODULE).Version=$(VERSION) \
     -X $(VERSION_MODULE).Commit=$(COMMIT) \
@@ -29,7 +29,7 @@ all: build
 # Build the binary
 build: deps
 	@echo "Building $(BINARY_NAME)..."
-	$(GOBUILD) -o bin/$(BINARY_NAME) $(LDFLAGS) .
+	$(GOBUILD) -trimpath -o bin/$(BINARY_NAME) $(LDFLAGS) .
 # Run the application
 run: build
 	@echo "Version: $(VERSION), Commit: $(COMMIT), Date: $(DATE)"
