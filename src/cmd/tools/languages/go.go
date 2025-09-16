@@ -30,8 +30,6 @@ func addGoToPath() {
 		return
 	}
 
-	helpers.PrintSuccess("Go installed successfully! Please restart your shell.")
-
 }
 
 var goCmd = &cobra.Command{
@@ -81,8 +79,48 @@ var goInstallCmd = &cobra.Command{
 	},
 }
 
+func addGoLintToPath() {
+
+	// Add ~/go/bin to PATH for Go binaries installed with 'go install'
+	helpers.PrintInfo("Adding Go langci completions to path")
+
+	shellinfo, err := helpers.GetShellInfo()
+	if err != nil {
+		helpers.PrintError("Failed to get shell info", err)
+		return
+	}
+	if err := helpers.AddToProfileIfCmdExists(fmt.Sprintf(`eval "$(golangci-lint completion %s)"`, shellinfo.Type), "golangci-lint"); err != nil {
+		helpers.PrintError("Failed to update kettle shell profile", err)
+		return
+	}
+	helpers.PrintSuccess("Added golangci-lint completions to shell profile")
+}
+
+var goLintInstallCmd = &cobra.Command{
+	Use:   "golangci-lint",
+	Short: "Install lint tool for Go",
+	Long:  `Downloads and installs the latest version of golangci-lint.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if helpers.CommandExists("golangci-lint") {
+			addGoLintToPath()
+			return
+
+		}
+		err := helpers.RunCmd("go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest")
+		if err != nil {
+			helpers.PrintError("Failed to install golangci-lint", err)
+			return
+		}
+		helpers.PrintSuccess("golangci-lint installed successfully.")
+		addGoLintToPath()
+
+	},
+}
+
 func init() {
 	goCmd.AddCommand(goInstallCmd)
+	goCmd.AddCommand(goLintInstallCmd)
+
 	// You'll need to add goCmd to the parent 'languages' command.
 	// Example: LanguagesCmd.AddCommand(goCmd)
 }

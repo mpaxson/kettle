@@ -16,10 +16,10 @@ import (
 
 type OSRelease map[string]string
 
-// fileClose ensures file.Close() errors don't get lost.
+// FileClose ensures file.Close() errors don't get lost.
 // If *err is nil, it will overwrite it with the close error.
 // If *err is already set, it will preserve the original error.
-func fileClose(c io.Closer, err *error) {
+func FileClose(c io.Closer, err *error) {
 	if cerr := c.Close(); cerr != nil {
 		if *err == nil {
 			*err = cerr
@@ -40,7 +40,7 @@ func readOSRelease(path string) (OSRelease, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer FileClose(file, &err)
 
 	data := make(OSRelease)
 	scanner := bufio.NewScanner(file)
@@ -127,7 +127,7 @@ func InstallBinary(path string) {
 	if err != nil {
 		PrintErrors(err)
 	}
-	defer fileClose(srcFile, &err)
+	defer FileClose(srcFile, &err)
 
 	// 4. Create the destination file (overwrite if it exists)
 	destFile, err := os.Create(destPath)
@@ -135,7 +135,7 @@ func InstallBinary(path string) {
 		PrintError("could not create destination file:", err)
 		return
 	}
-	defer fileClose(destFile, &err)
+	defer FileClose(destFile, &err)
 
 	// 5. Copy the file contents
 	_, err = io.Copy(destFile, srcFile)

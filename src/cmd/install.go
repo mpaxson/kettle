@@ -27,7 +27,7 @@ func generateCompletionForShell(shell string) error {
 	if err != nil {
 		return fmt.Errorf("could not create completion file: %w", err)
 	}
-	defer file.Close()
+	defer helpers.FileClose(file, &err)
 
 	// Generate the completion script
 	switch shell {

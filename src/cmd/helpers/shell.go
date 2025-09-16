@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/charmbracelet/log"
 )
 
 type ShellInfo struct {
@@ -112,7 +114,7 @@ func AddLineToShellProfile(line string) error {
 	if err != nil {
 		return fmt.Errorf("could not open shell profile for writing: %w", err)
 	}
-	defer fileClose(file, &err)
+	defer FileClose(file, &err)
 	//defer file.Close()
 
 	if _, err := fmt.Fprintln(file, line); err != nil {
@@ -133,7 +135,7 @@ func ExistsInFile(filePath, content string) (bool, error) {
 		}
 		return false, err
 	}
-	defer fileClose(file, &err)
+	defer FileClose(file, &err)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -183,7 +185,7 @@ func addToFile(input string, path string) error {
 	if err != nil {
 		return fmt.Errorf("could not open kettle shell profile for writing: %w", err)
 	}
-	defer fileClose(file, &err)
+	defer FileClose(file, &err)
 
 	_, err = fmt.Fprintln(file, input)
 	if err != nil {
@@ -195,8 +197,31 @@ func addToFile(input string, path string) error {
 
 }
 
+// AddToProfileIfCmdExists wraps a source or a command with a check to see if the command exists before adding it.
+func AddToProfileIfCmdExists(line string, bin string) error {
+	shellInfo, err := GetShellInfo()
+	if err != nil {
+		return err
+	}
+
+	var newValLine string
+	newValLine = fmt.Sprintf("if command -v %s >/dev/null; then\n", bin)
+	newValLine += fmt.Sprintf("    %s\n", line)
+	newValLine += "fi\n"
+	exists, err := ExistsInFile(shellInfo.KettlePath, line)
+	log.Debug("Checking if line exists in kettle profile:", newValLine)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	return AddLineToKettleShellProfile(newValLine)
+}
+
 // AddLineToKettleShellProfile adds a given line of text to the kettle-specific shell profile.
 func AddLineToKettleShellProfile(line string) error {
+
 	shellInfo, err := GetShellInfo()
 	if err != nil {
 		return err
