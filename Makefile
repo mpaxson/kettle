@@ -27,7 +27,7 @@ build: deps
 # Run the application
 run: build
 	@echo "Running $(BINARY_NAME)..."
-	./$(BINARY_NAME)
+	./bin/$(BINARY_NAME)
 
 # Run tests
 test:

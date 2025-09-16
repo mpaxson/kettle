@@ -37,8 +37,7 @@ var kittyInstallCmd = &cobra.Command{
 		for _, command := range commands {
 			err := helpers.RunCmd(command)
 			if err != nil {
-				fmt.Printf("Failed to execute command: %s\n", command)
-				fmt.Println(err)
+				helpers.PrintFail(fmt.Sprintf("Failed to execute command: %s", command))
 			}
 		}
 	},

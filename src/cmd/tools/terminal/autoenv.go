@@ -3,7 +3,6 @@ package terminal
 // autoenv.go
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/mpaxson/kettle/src/cmd/helpers"
 	"github.com/spf13/cobra"
@@ -26,35 +25,35 @@ var autoenvInstallCmd = &cobra.Command{
 	Short: "Installs autoenv",
 	Long:  `Installs autoenv.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := exec.LookPath("autoenv"); err == nil {
+		if helpers.CommandExists("autoenv") {
 			fmt.Println("autoenv is already installed.")
 			return
 		}
 
-		if _, err := exec.LookPath("npm"); err == nil {
+		if helpers.CommandExists("npm") {
 			err := helpers.RunCmd("npm install -g autoenv")
 			if err != nil {
-				fmt.Println("Failed to install autoenv with npm:", err)
+				helpers.PrintFail("Failed to install autoenv with npm")
 			}
 			return
 		}
 
 		if helpers.IsDarwin() {
-			if _, err := exec.LookPath("brew"); err != nil {
-				fmt.Println("Homebrew is not installed. Cannot install autoenv.")
+			if !helpers.CommandExists("brew") {
+				helpers.PrintFail("Homebrew is not installed. Cannot install autoenv.")
 				return
 			}
 			err := helpers.RunCmd("brew install autoenv")
 			if err != nil {
-				fmt.Println("Failed to install autoenv with brew:", err)
+				helpers.PrintFail("Failed to install autoenv with brew")
 			}
 		} else if helpers.IsUbuntu() {
 			err := helpers.RunCmd("sudo apt install -y autoenv")
 			if err != nil {
-				fmt.Println("Failed to install autoenv with apt:", err)
+				helpers.PrintFail("Failed to install autoenv with apt")
 			}
 		} else {
-			fmt.Println("Unsupported OS. Only Ubuntu and macOS are supported.")
+			helpers.PrintFail("Unsupported OS. Only Ubuntu and macOS are supported.")
 		}
 	},
 }

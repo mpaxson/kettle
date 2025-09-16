@@ -4,8 +4,8 @@
 
   // Organize imports automatically
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true,
-    "source.fixAll": true
+    "source.organizeImports": "explicit",
+    "source.fixAll": "explicit"
   },
 
   // Go extension settings
@@ -13,7 +13,7 @@
     "editor.defaultFormatter": "golang.go", // official Go extension
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": true
+      "source.organizeImports": "explicit"
     }
   },
 

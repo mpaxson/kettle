@@ -1,15 +1,16 @@
-
 # GitHub Copilot Instructions
 
 ## Goal
+
 Migrate all Python Invoke tasks defined in `src/scripts/` into equivalent Go [Cobra](https://github.com/spf13/cobra) commands.
 
 The existing Python tasks are structured as nested Invoke collections.  
 Example:
+
 ```bash
 inv terminal.ghostty.install
 inv tools.terminal.ghostty.bind-f1
-````
+```
 
 We want these to be turned into a Go CLI with the same hierarchical command layout using Cobra.
 
@@ -19,11 +20,11 @@ We want these to be turned into a Go CLI with the same hierarchical command layo
 
 ### General
 
-* Always generate Go code using Cobra (`github.com/spf13/cobra`).
-* Each Python Invoke namespace/collection (e.g., `terminal`, `tools`) should map to a Cobra command group.
-* Each Invoke task (final leaf) should map to a Cobra subcommand.
-* Commands must be defined under `cmd/` directory with `init()` to add them to the root or parent command.
-* Use idiomatic Go CLI structure:
+- Always generate Go code using Cobra (`github.com/spf13/cobra`).
+- Each Python Invoke namespace/collection (e.g., `terminal`, `tools`) should map to a Cobra command group.
+- Each Invoke task (final leaf) should map to a Cobra subcommand.
+- Commands must be defined under `cmd/` directory with `init()` to add them to the root or parent command.
+- Use idiomatic Go CLI structure:
 
   ```
   /cmd
@@ -37,16 +38,17 @@ We want these to be turned into a Go CLI with the same hierarchical command layo
 
 ### Command Naming
 
-* Preserve the nesting of Invoke commands:
+- Preserve the nesting of Invoke commands:
 
-  * `inv terminal.ghostty.install` → `./mycli terminal ghostty install`
-  * `inv tools.terminal.ghostty.bind-f1` → `./mycli tools terminal ghostty bind-f1`
-* If an Invoke task uses `-` in the name, keep it as-is (`bind-f1`).
+  - `inv terminal.ghostty.install` → `./mycli terminal ghostty install`
+  - `inv tools.terminal.ghostty.bind-f1` → `./mycli tools terminal ghostty bind-f1`
+
+- If an Invoke task uses `-` in the name, keep it as-is (`bind-f1`).
 
 ### Command Behavior
 
-* For now, commands can `fmt.Println("running <command>")` as stubs.
-* Later, they may execute corresponding shell logic (using `os/exec`), but initial focus is **scaffolding**.
+- For now, commands can `fmt.Println("running <command>")` as stubs.
+- Later, they may execute corresponding shell logic (using `os/exec`), but initial focus is **scaffolding**.
 
 ### Examples
 
@@ -121,45 +123,46 @@ func init() {
 
 When editing or creating files under `cmd/`, follow this workflow:
 
-* **Scaffold parent command**
+- **Scaffold parent command**
 
   > "Create a Cobra command for `terminal` with description 'Terminal related commands'. Add it to `rootCmd`."
 
-* **Add subcommand**
+- **Add subcommand**
 
   > "Under `terminal`, add a `ghostty` command grouping Ghostty terminal commands."
 
-* **Add task command**
+- **Add task command**
 
   > "Add a subcommand `install` under `ghostty` that prints 'running terminal ghostty install'."
 
-* **Repeat for all Invoke tasks in `src/scripts/`.**
+- **Repeat for all Invoke tasks in `src/scripts/`.**
 
 ---
 
 ## Notes
 
-* Keep Go files small and modular (one command per file).
-* Always attach new commands in `init()` so the CLI autowires.
-* Follow naming conventions: lowercase, hyphenated for flags/commands if needed.
-* Root command should describe the project purpose and show available subcommands.
-
-
+- Keep Go files small and modular (one command per file).
+- Always attach new commands in `init()` so the CLI autowires.
+- Follow naming conventions: lowercase, hyphenated for flags/commands if needed.
+- Root command should describe the project purpose and show available subcommands.
 
 ---
 
 # GitHub Copilot Instructions
 
 ## Goal
-Use [Charmbracelet](https://charm.sh/) libraries (`bubbletea`, `bubbles`, `lipgloss`) to make terminal UX more polished when running Cobra commands.  
+
+Use [Charmbracelet](https://charm.sh/) libraries (`bubbletea`, `bubbles`, `lipgloss`) to make terminal UX more polished when running Cobra commands.
 
 Every command should:
+
 - Show a **spinner** (from `bubbles/spinner`) while long tasks (like `inv` or `exec.Command`) are running.
 - Print **Lipgloss-styled success/error/info messages** after completion.
 
 ---
 
 ## Libraries to Use
+
 - `github.com/charmbracelet/bubbletea`
 - `github.com/charmbracelet/bubbles/spinner`
 - `github.com/charmbracelet/lipgloss`
@@ -169,19 +172,54 @@ Every command should:
 ## Guidelines for Copilot (Terminal Output )
 
 ### Spinner
+
 - Always initialize a spinner with `spinner.New()` and set its style.
 - Use `spinner.Dot` or `spinner.Line` as defaults.
 - Update the spinner on `tea.TickMsg`.
 - Show `"Running task..."` while a command is executing.
 
 ### Styled Messages
+
 - Use `lipgloss.NewStyle()` for success/error/info text.
 - Color conventions:
   - ✅ Success → Green (`Foreground(lipgloss.Color("10"))`)
   - ❌ Error → Red (`Foreground(lipgloss.Color("9"))`)
   - ℹ️ Info / spinner → Blue (`Foreground(lipgloss.Color("12"))`)
 
+### Helper Functions
+
+For consistency, use the following helper functions from the `helpers` package when applicable.
+
+- **`helpers.CommandExists("command-name")`**:
+
+  - Use this to check if a command-line tool is available in the user's `PATH` before attempting to use it.
+  - **Example**:
+    ```go
+    if !helpers.CommandExists("brew") {
+        helpers.PrintError("Homebrew is not installed.")
+        return
+    }
+    ```
+
+- **`helpers.PrintError("Your error message")`**:
+
+  - Use this for printing all user-facing error messages. It styles the output in red with a `✗` prefix.
+  - **Example**:
+    ```go
+    if err != nil {
+        helpers.PrintError("Failed to complete the task.")
+    }
+    ```
+
+- **`helpers.PrintSuccess("Your success message")`**:
+  - Use this for printing success messages. It styles the output in green with a `✓` prefix.
+  - **Example**:
+    ```go
+    helpers.PrintSuccess("Task completed successfully.")
+    ```
+
 ### Command Integration
+
 - Commands should return a `RunE` function in Cobra that calls a helper like `RunWithSpinner("task description", func() error { ... })`.
 
 ---
@@ -260,9 +298,11 @@ func RunWithSpinner(msg string, cmd *exec.Cmd) error {
 	_, err := p.Run()
 	return err
 }
-Example: Cobra Command
-go
-Copy code
+```
+
+## Example: Cobra Command
+
+```go
 var ghosttyInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Ghostty terminal",
@@ -273,7 +313,10 @@ var ghosttyInstallCmd = &cobra.Command{
 		)
 	},
 }
-Copilot Prompts
+```
+
+## Copilot Prompts
+
 When writing new commands:
 
 Scaffold spinner helper
@@ -294,6 +337,3 @@ Always use RunE in Cobra commands to bubble up errors.
 Spinner should quit automatically when the task ends.
 
 Use Lipgloss styles consistently across all commands for a professional look.
-
-yaml
-Copy code

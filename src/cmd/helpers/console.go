@@ -25,6 +25,12 @@ var (
 			Foreground(lipgloss.Color("9")).
 			Bold(true)
 
+	errorPanelStyle = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder(), true).
+			BorderForeground(lipgloss.Color("9")).
+			Padding(0, 1).
+			MarginLeft(2)
+
 	infoStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("12"))
 )
@@ -147,4 +153,30 @@ func getSudoPassword() (string, error) {
 		sudoPassword = string(pw)
 	})
 	return sudoPassword, err
+}
+
+func PrintFail(msg string) {
+
+	fmt.Println(errorStyle.Render("✗ " + msg))
+}
+
+func PrintErrors(err ...error) {
+
+	PrintError("", err...)
+
+}
+
+func PrintError(msg string, err ...error) {
+	PrintFail(msg)
+
+	if len(err) > 0 && err[0] != nil {
+
+		msg = fmt.Sprintf("%s: %v", msg, err[0])
+
+	}
+	fmt.Println(errorPanelStyle.Render("✗ " + msg))
+}
+
+func PrintSuccess(msg string) {
+	fmt.Println(successStyle.Render("✓ " + msg))
 }

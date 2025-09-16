@@ -1,8 +1,8 @@
 package terminal
+
 // ghostty.go
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/mpaxson/kettle/src/cmd/helpers"
 	"github.com/spf13/cobra"
@@ -26,28 +26,28 @@ var ghosttyInstallCmd = &cobra.Command{
 	Long:  `Installs ghostty for the current operating system.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if !helpers.IsUbuntu() && !helpers.IsDarwin() {
-			fmt.Println("Unsupported OS. Only Ubuntu and macOS are supported.")
+			helpers.PrintFail("Unsupported OS. Only Ubuntu and macOS are supported.")
 			return
 		}
 
-		if _, err := exec.LookPath("ghostty"); err == nil {
+		if helpers.CommandExists("ghostty") {
 			fmt.Println("ghostty is already installed.")
 			return
 		}
 
 		if helpers.IsDarwin() {
-			if _, err := exec.LookPath("brew"); err != nil {
-				fmt.Println("Homebrew is not installed. Cannot install ghostty.")
+			if !helpers.CommandExists("brew") {
+				helpers.PrintFail("Homebrew is not installed. Cannot install ghostty.")
 				return
 			}
 			err := helpers.RunCmd("brew install ghostty")
 			if err != nil {
-				fmt.Println("Failed to install ghostty with brew:", err)
+				helpers.PrintFail("Failed to install ghostty with brew")
 			}
 		} else if helpers.IsUbuntu() {
 			err := helpers.RunCmd("sudo snap install ghostty --classic")
 			if err != nil {
-				fmt.Println("Failed to install ghostty with snap:", err)
+				helpers.PrintFail("Failed to install ghostty with snap")
 			}
 		}
 	},
@@ -66,25 +66,25 @@ var ghosttyBindF1Cmd = &cobra.Command{
 
 		err := helpers.RunCmd(fmt.Sprintf("gsettings set %s custom-keybindings \"['%s']\"", schema, path))
 		if err != nil {
-			fmt.Println("Failed to set custom-keybindings:", err)
+			helpers.PrintFail("Failed to set custom-keybindings")
 			return
 		}
 
 		err = helpers.RunCmd(fmt.Sprintf("gsettings set %s.custom-keybinding:%s name '%s'", schema, path, name))
 		if err != nil {
-			fmt.Println("Failed to set name:", err)
+			helpers.PrintFail("Failed to set name")
 			return
 		}
 
 		err = helpers.RunCmd(fmt.Sprintf("gsettings set %s.custom-keybinding:%s command '%s'", schema, path, script))
 		if err != nil {
-			fmt.Println("Failed to set command:", err)
+			helpers.PrintFail("Failed to set command")
 			return
 		}
 
 		err = helpers.RunCmd(fmt.Sprintf("gsettings set %s.custom-keybinding:%s binding '%s'", schema, path, key))
 		if err != nil {
-			fmt.Println("Failed to set binding:", err)
+			helpers.PrintFail("Failed to set binding")
 			return
 		}
 
@@ -104,13 +104,13 @@ var ghosttyUnbindF1Cmd = &cobra.Command{
 
 		err := helpers.RunCmd(fmt.Sprintf("gsettings reset %s custom-keybindings", schema))
 		if err != nil {
-			fmt.Println("Failed to reset custom-keybindings:", err)
+			helpers.PrintFail("Failed to reset custom-keybindings")
 			return
 		}
 
 		err = helpers.RunCmd(fmt.Sprintf("gsettings reset-recursively %s.custom-keybinding:%s", schema, path))
 		if err != nil {
-			fmt.Println("Failed to reset-recursively:", err)
+			helpers.PrintFail("Failed to reset-recursively")
 			return
 		}
 

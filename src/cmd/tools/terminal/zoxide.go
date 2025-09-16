@@ -1,9 +1,7 @@
-
 package terminal
 
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/mpaxson/kettle/src/cmd/helpers"
 	"github.com/spf13/cobra"
@@ -26,17 +24,18 @@ var zoxideInstallCmd = &cobra.Command{
 	Short: "Installs zoxide",
 	Long:  `Installs zoxide.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := exec.LookPath("zoxide"); err == nil {
+		if helpers.CommandExists("zoxide") {
 			fmt.Println("Zoxide is already installed.")
 			return
 		}
 
 		err := helpers.RunCmd("curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh")
 		if err != nil {
-			fmt.Println("Failed to install zoxide:", err)
+			helpers.PrintFail("Failed to install zoxide")
 		} else {
-			fmt.Println("Zoxide installed.")
+			helpers.PrintSuccess("Zoxide installed.")
 		}
+		helpers.GetKettleShellProfile()
 	},
 }
 
