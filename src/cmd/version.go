@@ -33,7 +33,7 @@ func GetVersion() string {
 	if Version == "dev" {
 		return fmt.Sprintf("%s (commit: %s, built: %s)", Version, Commit, Date)
 	}
-	return fmt.Sprintf("v%s (commit: %s, built: %s)", Version, Commit, Date)
+	return fmt.Sprintf("%s (commit: %s, built: %s)", Version, Commit, Date)
 }
 
 // versionCmd represents the version command
