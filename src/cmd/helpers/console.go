@@ -38,12 +38,10 @@ var (
 type outputMsg string
 
 type model struct {
-	spinner  spinner.Model
-	quitting bool
-	msg      string
-	output   string
-	done     bool
-	err      error
+	spinner spinner.Model
+	output  string
+	done    bool
+	err     error
 }
 
 func (m model) Init() tea.Cmd {
@@ -179,4 +177,8 @@ func PrintError(msg string, err ...error) {
 
 func PrintSuccess(msg string) {
 	fmt.Println(successStyle.Render("✓ " + msg))
+}
+
+func PrintInfo(msg string) {
+	fmt.Println(infoStyle.Render("ℹ " + msg))
 }

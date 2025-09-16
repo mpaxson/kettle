@@ -47,7 +47,7 @@ func generateCompletionForShell(shell string) error {
 		return fmt.Errorf("unsupported shell for completion: %s", shell)
 	}
 
-	helpers.PrintSuccess(fmt.Sprintf("Generated %s completion file at %s", shell, completionFile))
+	helpers.PrintInfo(fmt.Sprintf("Generated %s completion file at %s", shell, completionFile))
 	return nil
 }
 
@@ -71,12 +71,7 @@ var installCmd = &cobra.Command{
 		if err != nil {
 			return
 		}
-		err = helpers.InstallBinary(exePath)
-		if err == nil {
-			helpers.PrintSuccess("kettle installed successfully!")
-		} else {
-			helpers.PrintError("kettle installation failed:", err)
-		}
+		helpers.InstallBinary(exePath)
 
 		GenerateAllCompletionFiles()
 		if err := helpers.EnsureCompletionsSourced(); err != nil {

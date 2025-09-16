@@ -35,7 +35,12 @@ var zoxideInstallCmd = &cobra.Command{
 		} else {
 			helpers.PrintSuccess("Zoxide installed.")
 		}
-		helpers.GetKettleShellProfile()
+		err = helpers.AddLineToKettleShellProfile(`eval "$(zoxide init --cmd z zsh)"`)
+		if err != nil {
+			helpers.PrintFail("Failed to add zoxide initialization to shell profile")
+		} else {
+			helpers.PrintSuccess("Added zoxide initialization to shell profile")
+		}
 	},
 }
 

@@ -10,18 +10,22 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 )
 
 // getOSReleaseValue reads a specific key from the /etc/os-release file.
 
 type OSRelease map[string]string
 
-var (
-	cached OSRelease
-	once   sync.Once
-	err    error
-)
+// fileClose ensures file.Close() errors don't get lost.
+// If *err is nil, it will overwrite it with the close error.
+// If *err is already set, it will preserve the original error.
+func fileClose(c io.Closer, err *error) {
+	if cerr := c.Close(); cerr != nil {
+		if *err == nil {
+			*err = cerr
+		}
+	}
+}
 
 // Get returns the OSRelease map, reading /etc/os-release once
 func Get() (OSRelease, error) {
@@ -77,7 +81,7 @@ func CommandExists(cmd string) bool {
 	_, err := exec.LookPath(cmd)
 	val := err == nil
 	if val {
-		PrintSuccess(successStyle.Render("Command '%s' exists.", cmd))
+		PrintInfo(fmt.Sprintf("Command '%s' exists.", cmd))
 	}
 	return val
 }
@@ -107,14 +111,13 @@ func IsUbuntu26() bool {
 }
 
 // InstallBinary copies the current executable to a directory in the user's PATH.
-func InstallBinary(path string) error {
+func InstallBinary(path string) {
 	// 1. Get the path of the current executable
 
 	// 2. Determine the installation directory
 	destDir, err := getInstallDir()
 	if err != nil {
 		PrintError("", err)
-		return err
 	}
 
 	destPath := filepath.Join(destDir, filepath.Base(path))
@@ -122,33 +125,37 @@ func InstallBinary(path string) error {
 	// 3. Open the source file
 	srcFile, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("could not open source binary: %w", err)
+		PrintErrors(err)
 	}
-	defer srcFile.Close()
+	defer fileClose(srcFile, &err)
 
 	// 4. Create the destination file (overwrite if it exists)
 	destFile, err := os.Create(destPath)
 	if err != nil {
 		PrintError("could not create destination file:", err)
-		return fmt.Errorf("could not create destination file: %w", err)
+		return
 	}
-	defer destFile.Close()
+	defer fileClose(destFile, &err)
 
 	// 5. Copy the file contents
 	_, err = io.Copy(destFile, srcFile)
 	if err != nil {
 		PrintError("could not copy binary:", err)
-		return fmt.Errorf("could not copy binary: %w", err)
+		return
 	}
 
 	// 6. Make the destination file executable
 	err = os.Chmod(destPath, 0755)
 	if err != nil {
 		PrintError("Could not make binary executable:", err)
-		return fmt.Errorf("could not make binary executable: %w", err)
+		return
 	}
 
-	return nil
+	if !CommandExists(filepath.Base(path)) {
+		PrintError(fmt.Sprintf("Install Failed for %s", filepath.Base(path)))
+		return
+	}
+	PrintSuccess(fmt.Sprintf("%s Installed Successfully", filepath.Base(path)))
 }
 
 // getInstallDir determines the correct directory for installation.

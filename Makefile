@@ -29,6 +29,10 @@ run: build
 	@echo "Running $(BINARY_NAME)..."
 	./bin/$(BINARY_NAME)
 
+# Run the application
+install: build
+	@echo "Running $(BINARY_NAME)..."
+	./bin/$(BINARY_NAME) install
 # Run tests
 test:
 	@echo "Running tests..."
@@ -40,6 +44,10 @@ clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 
+lint:
+	@echo "Linting..."
+	golangci-lint run
+	
 # Install dependencies
 deps:
 	@echo "Installing dependencies..."

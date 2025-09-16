@@ -2,6 +2,7 @@
 package tools
 
 import (
+	"github.com/mpaxson/kettle/src/cmd/tools/languages"
 	"github.com/mpaxson/kettle/src/cmd/tools/terminal"
 	"github.com/spf13/cobra"
 )
@@ -20,6 +21,8 @@ to quickly create a Cobra application.`,
 
 func init() {
 	ToolsCmd.AddCommand(terminal.TerminalCmd)
+	ToolsCmd.AddCommand(languages.LanguagesCmd)
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

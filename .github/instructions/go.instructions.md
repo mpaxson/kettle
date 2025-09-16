@@ -212,11 +212,175 @@ For consistency, use the following helper functions from the `helpers` package w
     ```
 
 - **`helpers.PrintSuccess("Your success message")`**:
+
   - Use this for printing success messages. It styles the output in green with a `✓` prefix.
   - **Example**:
     ```go
     helpers.PrintSuccess("Task completed successfully.")
     ```
+
+- **`helpers.PrintInfo("Your info message")`**:
+  - Use this for printing informational messages. It styles the output in blue with a `ℹ` prefix.
+  - **Example**:
+    ```go
+    helpers.PrintInfo("Downloading Go...")
+    ```
+
+### Shell Profile Management
+
+For commands that need to modify shell configurations (like adding exports to PATH), use the following helper functions from the `helpers` package:
+
+- **`helpers.GetCurrentShell()`**:
+
+  - Returns the name of the currently running shell (bash, zsh, fish).
+  - **Example**:
+    ```go
+    shell := helpers.GetCurrentShell()
+    // Returns: "zsh", "bash", or "fish"
+    ```
+
+- **`helpers.GetShellProfile()`**:
+
+  - Returns the path to the main shell configuration file based on the current shell.
+  - **Example**:
+    ```go
+    profilePath, err := helpers.GetShellProfile()
+    // Returns: "/home/user/.zshrc", "/home/user/.bashrc", etc.
+    ```
+
+- **`helpers.AddLineToShellProfile(line string)`**:
+
+  - Adds a line to the user's main shell profile if it doesn't already exist.
+  - **Example**:
+    ```go
+    err := helpers.AddLineToShellProfile("export PATH=$PATH:/usr/local/go/bin")
+    ```
+
+- **`helpers.GetKettleConfigDir()`**:
+
+  - Returns the path to `~/.config/kettle` and creates it if it doesn't exist.
+  - **Example**:
+    ```go
+    configDir, err := helpers.GetKettleConfigDir()
+    // Returns: "/home/user/.config/kettle"
+    ```
+
+- **`helpers.GetKettleShellProfile()`**:
+
+  - Returns the path to the kettle-specific shell profile file (e.g., `~/.config/kettle/kettle.zshrc`).
+  - **Example**:
+    ```go
+    profilePath, err := helpers.GetKettleShellProfile()
+    // Returns: "/home/user/.config/kettle/kettle.zshrc"
+    ```
+
+- **`helpers.AddLineToKettleShellProfile(line string)`**:
+
+  - Adds a line to the kettle-specific shell profile if it doesn't already exist.
+  - **Example**:
+    ```go
+    err := helpers.AddLineToKettleShellProfile("alias ll='ls -la'")
+    ```
+
+- **`helpers.EnsureKettleProfileSourced()`**:
+
+  - Ensures the main shell profile sources the kettle-specific profile.
+  - **Example**:
+    ```go
+    err := helpers.EnsureKettleProfileSourced()
+    ```
+
+- **`helpers.EnsureCompletionsSourced()`**:
+  - Adds the source command for shell completions to the kettle profile.
+  - **Example**:
+    ```go
+    err := helpers.EnsureCompletionsSourced()
+    ```
+
+### Best Practices for Shell Configuration
+
+1. **Use Kettle-Specific Profiles**: Instead of directly modifying `~/.zshrc` or `~/.bashrc`, add configurations to the kettle-specific profile files in `~/.config/kettle/`.
+
+2. **Check Before Adding**: Always use the helper functions that check if a line already exists before adding it to prevent duplicates.
+
+3. **Inform Users**: After modifying shell profiles, always inform users that they need to restart their shell or source the profile for changes to take effect.
+
+**Example Implementation**:
+
+```go
+// Add Go to PATH
+if err := helpers.AddLineToShellProfile("export PATH=$PATH:/usr/local/go/bin"); err != nil {
+    helpers.PrintError("Failed to update shell profile", err)
+    return
+}
+helpers.PrintSuccess("Go added to PATH. Please restart your shell.")
+```
+
+### File Handling and Resource Management
+
+When working with files in Go, always use proper resource management patterns to ensure files are closed and errors are handled correctly:
+
+- **Use `defer helpers.FileClose(file, &err)`** for proper error handling when closing files:
+
+  ```go
+  func processFile(filename string) (err error) {
+      file, err := os.Open(filename)
+      if err != nil {
+          return fmt.Errorf("failed to open file: %w", err)
+      }
+      defer helpers.FileClose(file, &err)
+
+      // Process the file...
+      return nil
+  }
+  ```
+
+- **Always check errors when opening files**:
+
+  ```go
+  file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+  if err != nil {
+      return fmt.Errorf("could not open file for writing: %w", err)
+  }
+  defer helpers.FileClose(file, &err)
+  ```
+
+- **Use named return values** when using `helpers.FileClose` to allow the helper to modify the return error if file closing fails:
+
+  ```go
+  func writeToFile(path, content string) (err error) {
+      file, err := os.Create(path)
+      if err != nil {
+          return err
+      }
+      defer helpers.FileClose(file, &err)
+
+      _, err = file.WriteString(content)
+      return err
+  }
+  ```
+
+**Why use `helpers.FileClose`?**
+
+- Ensures file close errors are not silently ignored (violates errcheck linting)
+- Provides consistent error handling across the codebase
+- Automatically wraps close errors with context
+- Prevents resource leaks even when errors occur
+
+**Example Helper Implementation**:
+
+```go
+// FileClose safely closes a file and updates the error pointer if closing fails
+func FileClose(file *os.File, err *error) {
+    if closeErr := file.Close(); closeErr != nil {
+        if *err == nil {
+            *err = fmt.Errorf("failed to close file: %w", closeErr)
+        } else {
+            *err = fmt.Errorf("%w (also failed to close file: %v)", *err, closeErr)
+        }
+    }
+}
+```
 
 ### Command Integration
 
