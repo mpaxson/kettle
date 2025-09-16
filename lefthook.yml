@@ -1,0 +1,8 @@
+prepare-commit-msg:
+  commands:
+    update-version:
+      run: make update_version
+    add-version-file:
+      run: git add src/internal/version/version.go
+    ammend-commit:
+      run: git commit --amend --no-edit

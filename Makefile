@@ -14,7 +14,7 @@ VERSION ?= $(shell git describe --tags --always --dirty)
 LDFLAGS = -ldflags="-X main.version=${VERSION}"
 
 # Phony targets are not real files
-.PHONY: all build run test clean deps
+.PHONY: all build run test clean deps install docs lint
 
 # Default target
 all: build
@@ -44,9 +44,20 @@ clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
 
+docs:
+	@echo "Generating documentation..."
+	go run ./src/internal/tools/docgen -out ./docs/cli -format markdown
+
 lint:
 	@echo "Linting..."
 	golangci-lint run
+
+update_version:
+	@echo "Updating version..."
+	go run ./src/internal/scripts/update_version.go
+dev-tools:
+	go install github.com/evilmartians/lefthook@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	
 # Install dependencies
 deps:
