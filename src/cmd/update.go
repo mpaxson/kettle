@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -75,7 +74,7 @@ func updateKettle() error {
 
 	helpers.PrintInfo("Downloading latest kettle binary...")
 
-	if err := downloadFile(tmpFile, githubReleasesURL); err != nil {
+	if err := helpers.DownloadFile(tmpFile, githubReleasesURL); err != nil {
 		helpers.PrintError("Failed to download latest version", err)
 		return err
 	}
@@ -189,41 +188,6 @@ func parseVersion(version string) [3]int {
 	}
 
 	return parts
-}
-
-// downloadFile downloads a file from the given URL and saves it to the specified path
-func downloadFile(filepath string, url string) error {
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
-	}
-	defer helpers.FileClose(out, &err)
-
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("failed to download file: %w", err)
-	}
-	defer func() {
-
-		err := resp.Body.Close()
-		if err != nil {
-			helpers.PrintError("Failed to close response body", err)
-		}
-	}()
-	// Check server response
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status: %s", resp.Status)
-	}
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to save file: %w", err)
-	}
-
-	return nil
 }
 
 // atomicReplace performs an atomic replacement of the target file with the source file

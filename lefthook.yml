@@ -1,6 +1,9 @@
 pre-commit:
   parallel: true
+
   commands:
+    build-docs:
+      run: make docs
     go-fmt:
       run: go fmt ./...
     golangci-lint:

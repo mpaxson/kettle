@@ -244,7 +244,7 @@ For commands that need to modify shell configurations (like adding exports to PA
   - Returns the path to the main shell configuration file based on the current shell.
   - **Example**:
     ```go
-    profilePath, err := helpers.GetShellProfile()
+    shellProfile  := helpers.GetShellProfile()
     // Returns: "/home/user/.zshrc", "/home/user/.bashrc", etc.
     ```
 
@@ -253,7 +253,7 @@ For commands that need to modify shell configurations (like adding exports to PA
   - Adds a line to the user's main shell profile if it doesn't already exist.
   - **Example**:
     ```go
-    err := helpers.AddLineToShellProfile("export PATH=$PATH:/usr/local/go/bin")
+    helpers.AddLineToShellProfile("export PATH=$PATH:/usr/local/go/bin")
     ```
 
 - **`helpers.GetKettleConfigDir()`**:
@@ -287,7 +287,7 @@ For commands that need to modify shell configurations (like adding exports to PA
   - Ensures the main shell profile sources the kettle-specific profile.
   - **Example**:
     ```go
-    err := helpers.EnsureKettleProfileSourced()
+    helpers.EnsureKettleProfileSourced()
     ```
 
 - **`helpers.EnsureCompletionsSourced()`**:
@@ -309,7 +309,7 @@ For commands that need to modify shell configurations (like adding exports to PA
 
 ```go
 // Add Go to PATH
-if err := helpers.AddLineToShellProfile("export PATH=$PATH:/usr/local/go/bin"); err != nil {
+if !helpers.AddLineToShellProfile("export PATH=$PATH:/usr/local/go/bin") {
     helpers.PrintError("Failed to update shell profile", err)
     return
 }
@@ -501,3 +501,4 @@ Always use RunE in Cobra commands to bubble up errors.
 Spinner should quit automatically when the task ends.
 
 Use Lipgloss styles consistently across all commands for a professional look.
+

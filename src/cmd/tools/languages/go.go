@@ -2,8 +2,11 @@ package languages
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"runtime"
 
+	"github.com/charmbracelet/log"
 	"github.com/mpaxson/kettle/src/cmd/helpers"
 	"github.com/spf13/cobra"
 )
@@ -12,23 +15,19 @@ func addGoToPath() {
 
 	// Add ~/go/bin to PATH for Go binaries installed with 'go install'
 	helpers.PrintInfo("Adding Go workspace bin to PATH...")
-	if err := helpers.AddLineToKettleShellProfile(`export PATH=$PATH:$HOME/go/bin`); err != nil {
-		helpers.PrintError("Failed to update kettle shell profile", err)
-		return
+	if helpers.AddLineToKettleShellProfile(`export PATH=$PATH:$HOME/go/bin`) {
+		helpers.PrintSuccess("Added Go workspace bin to kettle shell profile")
 	}
 
 	// Ensure kettle profile is sourced
-	if err := helpers.EnsureKettleProfileSourced(); err != nil {
-		helpers.PrintError("Failed to source kettle profile", err)
-		return
-	}
-
+	helpers.EnsureKettleProfileSourced()
 	// Add to PATH
 	helpers.PrintInfo("Adding Go to PATH...")
-	if err := helpers.AddLineToShellProfile(`export PATH=$PATH:/usr/local/go/bin`); err != nil {
-		helpers.PrintError("Failed to update shell profile", err)
+	if !helpers.AddLineToShellProfile(`export PATH=$PATH:/usr/local/go/bin`) {
+		helpers.PrintInfo("Go already in PATH")
 		return
 	}
+	helpers.PrintSuccess("Added Go to PATH")
 
 }
 
@@ -84,16 +83,49 @@ func addGoLintToPath() {
 	// Add ~/go/bin to PATH for Go binaries installed with 'go install'
 	helpers.PrintInfo("Adding Go langci completions to path")
 
-	shellinfo, err := helpers.GetShellInfo()
+	shellinfo := helpers.GetShellInfo()
+
+	added := helpers.AddToProfileIfCmdExists(fmt.Sprintf(`eval "$(golangci-lint completion %s)"`, shellinfo.Type), "golangci-lint")
+	if added {
+		helpers.PrintSuccess("Added golangci-lint completions to shell profile")
+	}
+}
+func installGoLint() {
+
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		helpers.PrintError("Failed to get shell info", err)
+		helpers.PrintError("Failed to get user home directory", err)
 		return
 	}
-	if err := helpers.AddToProfileIfCmdExists(fmt.Sprintf(`eval "$(golangci-lint completion %s)"`, shellinfo.Type), "golangci-lint"); err != nil {
-		helpers.PrintError("Failed to update kettle shell profile", err)
+	if gopath := os.Getenv("GOPATH"); gopath == "" {
+		gopath = fmt.Sprintf("%s/go", homeDir)
+		err := os.Setenv("GOPATH", gopath)
+		if err != nil {
+			helpers.PrintError("Failed to set GOPATH", err)
+			return
+		}
+	}
+
+	helpers.PrintInfo("Downloading golangci-lint install script...")
+	goPath := os.Getenv("GOPATH")
+	if goPath == "" {
+		goPath = filepath.Join(homeDir, "go")
+	}
+
+	installDir := filepath.Join(goPath, "bin")
+	helpers.AddToPath(installDir)
+	destPath, err := helpers.GithubDownloadLatestRelease("golangci", "golangci-lint", installDir, "golangci-lint")
+	helpers.PrintInfo("Downloaded golangci-lint to: " + destPath)
+
+	if err != nil {
+		log.Error(destPath)
+		helpers.PrintError("Failed to install golangci-lint", err)
 		return
 	}
-	helpers.PrintSuccess("Added golangci-lint completions to shell profile")
+
+	helpers.PrintSuccess("golangci-lint installed successfully.")
+	addGoLintToPath()
+
 }
 
 var goLintInstallCmd = &cobra.Command{
@@ -102,18 +134,15 @@ var goLintInstallCmd = &cobra.Command{
 	Long:  `Downloads and installs the latest version of golangci-lint.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if helpers.CommandExists("golangci-lint") {
-			addGoLintToPath()
-			return
-
+			// Prompt user if they want to reinstall
+			if !helpers.PromptYesNo("golangci-lint is already installed. Do you want to reinstall it?") {
+				helpers.PrintInfo("Skipping golangci-lint installation.")
+				addGoLintToPath()
+				return
+			}
+			helpers.PrintInfo("Proceeding with golangci-lint reinstallation...")
 		}
-		err := helpers.RunCmd("curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0")
-		if err != nil {
-			helpers.PrintError("Failed to install golangci-lint", err)
-			return
-		}
-		helpers.PrintSuccess("golangci-lint installed successfully.")
-		addGoLintToPath()
-
+		installGoLint()
 	},
 }
 

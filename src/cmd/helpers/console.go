@@ -12,7 +12,9 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
+	log "github.com/charmbracelet/log"
 	"github.com/charmbracelet/x/term"
 )
 
@@ -172,6 +174,7 @@ func PrintError(msg string, err ...error) {
 		msg = fmt.Sprintf("%s: %v", msg, err[0])
 
 	}
+	log.Error(msg)
 	fmt.Println(errorPanelStyle.Render("✗ " + msg))
 }
 
@@ -180,5 +183,32 @@ func PrintSuccess(msg string) {
 }
 
 func PrintInfo(msg string) {
+	log.Debug(msg)
 	fmt.Println(infoStyle.Render("ℹ " + msg))
+}
+
+// PromptYesNo prompts the user with a yes/no question and returns true for yes, false for no
+func PromptYesNo(question string) bool {
+	var confirm bool
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Title("Do you want to continue?").
+				Value(&confirm),
+		),
+	)
+
+	if err := form.Run(); err != nil {
+		fmt.Println("Error:", err)
+		return false
+	}
+
+	if confirm {
+		fmt.Println("Continuing...")
+	} else {
+		fmt.Println("Aborted.")
+	}
+	return confirm
+
 }

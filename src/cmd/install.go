@@ -27,7 +27,7 @@ func generateCompletionForShell(shell string) error {
 	if err != nil {
 		return fmt.Errorf("could not create completion file: %w", err)
 	}
-	defer helpers.FileClose(file, &err)
+	defer helpers.IOClose(file, &err)
 
 	// Generate the completion script
 	switch shell {
@@ -74,16 +74,8 @@ var installCmd = &cobra.Command{
 		helpers.InstallBinary(exePath)
 
 		GenerateAllCompletionFiles()
-		if err := helpers.EnsureCompletionsSourced(); err != nil {
-			helpers.PrintError("Failed to source completion files", err)
-		}
-
-		err = helpers.EnsureKettleProfileSourced()
-		if err != nil {
-			helpers.PrintError("kettle profile sourcing failed:", err)
-		} else {
-			helpers.PrintSuccess("kettle profile sourced successfully!")
-		}
+		helpers.EnsureCompletionsSourced()
+		helpers.EnsureKettleProfileSourced()
 
 	},
 }

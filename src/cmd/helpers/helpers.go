@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
@@ -16,10 +14,10 @@ import (
 
 type OSRelease map[string]string
 
-// FileClose ensures file.Close() errors don't get lost.
+// IOClose ensures file.Close() errors don't get lost.
 // If *err is nil, it will overwrite it with the close error.
 // If *err is already set, it will preserve the original error.
-func FileClose(c io.Closer, err *error) {
+func IOClose(c io.Closer, err *error) {
 	if cerr := c.Close(); cerr != nil {
 		if *err == nil {
 			*err = cerr
@@ -40,7 +38,7 @@ func readOSRelease(path string) (OSRelease, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer FileClose(file, &err)
+	defer IOClose(file, &err)
 
 	data := make(OSRelease)
 	scanner := bufio.NewScanner(file)
@@ -64,58 +62,12 @@ func readOSRelease(path string) (OSRelease, error) {
 	return data, nil
 }
 
-func IsUbuntu() bool {
-	osr, err := Get()
-	if err != nil {
-		return false
-	}
-	return osr["ID"] == "ubuntu"
-}
-
-func IsDarwin() bool {
-	return runtime.GOOS == "darwin"
-}
-
-// CommandExists checks if a command is in the PATH.
-func CommandExists(cmd string) bool {
-	_, err := exec.LookPath(cmd)
-	val := err == nil
-	if val {
-		PrintInfo(fmt.Sprintf("Command '%s' exists.", cmd))
-	}
-	return val
-}
-
-func isUbuntuVersion(versionPrefix string) bool {
-	if IsUbuntu() {
-		osr, err := Get()
-		if err != nil {
-			return false
-		}
-		versionID := osr["VERSION_ID"]
-		return strings.HasPrefix(versionID, versionPrefix)
-	}
-	return false
-}
-
-func IsUbuntu22() bool {
-	return isUbuntuVersion("22.04")
-}
-
-func IsUbuntu24() bool {
-	return isUbuntuVersion("24.04")
-}
-
-func IsUbuntu26() bool {
-	return isUbuntuVersion("26.04")
-}
-
 // InstallBinary copies the current executable to a directory in the user's PATH.
 func InstallBinary(path string) {
 	// 1. Get the path of the current executable
 
 	// 2. Determine the installation directory
-	destDir, err := getInstallDir()
+	destDir, err := GetInstallDir()
 	if err != nil {
 		PrintError("", err)
 	}
@@ -127,7 +79,7 @@ func InstallBinary(path string) {
 	if err != nil {
 		PrintErrors(err)
 	}
-	defer FileClose(srcFile, &err)
+	defer IOClose(srcFile, &err)
 
 	// 4. Create the destination file (overwrite if it exists)
 	destFile, err := os.Create(destPath)
@@ -135,7 +87,7 @@ func InstallBinary(path string) {
 		PrintError("could not create destination file:", err)
 		return
 	}
-	defer FileClose(destFile, &err)
+	defer IOClose(destFile, &err)
 
 	// 5. Copy the file contents
 	_, err = io.Copy(destFile, srcFile)
@@ -158,8 +110,8 @@ func InstallBinary(path string) {
 	PrintSuccess(fmt.Sprintf("%s Installed Successfully", filepath.Base(path)))
 }
 
-// getInstallDir determines the correct directory for installation.
-func getInstallDir() (string, error) {
+// GetInstallDir determines the correct directory for installation.
+func GetInstallDir() (string, error) {
 	// Check for ~/.local/bin
 	homeDir, err := os.UserHomeDir()
 	if err != nil {

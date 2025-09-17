@@ -8,7 +8,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/mpaxson/kettle/src/cmd/linux"
+	"github.com/mpaxson/kettle/src/cmd/platforms/linux"
 	"github.com/mpaxson/kettle/src/cmd/sets"
 	"github.com/mpaxson/kettle/src/cmd/tools"
 	"github.com/spf13/cobra"

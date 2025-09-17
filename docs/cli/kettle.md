@@ -22,4 +22,6 @@ to quickly create a Cobra application.
 
 * [kettle install](kettle_install.md)	 - Install kettle to your system
 * [kettle tools](kettle_tools.md)	 - A brief description of your command
+* [kettle update](kettle_update.md)	 - Update kettle to the latest version
+* [kettle version](kettle_version.md)	 - Show the version of kettle
 
