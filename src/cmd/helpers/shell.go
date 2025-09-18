@@ -240,7 +240,6 @@ func GetHomeDir() string {
 	return homeDir
 }
 
-	
 func GetCurrentDir() string {
 	curDir, err := os.Getwd()
 	if err != nil {
@@ -305,4 +304,3 @@ func EnsureCompletionsSourced() bool {
 	sourceCmd := fmt.Sprintf("source %s", completionFile)
 	return AddLineToKettleShellProfile(sourceCmd)
 }
-

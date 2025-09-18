@@ -41,7 +41,7 @@ var goInstallCmd = &cobra.Command{
 	Short: "Install Go",
 	Long:  `Downloads and installs the latest version of Go.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		
+
 		if helpers.CommandExists("go") {
 			addGoToPath()
 			return
