@@ -1,4 +1,4 @@
-## kettle tools languages go golangci-lint
+## kettle languages go golangci-lint
 
 Install lint tool for Go
 
@@ -7,7 +7,7 @@ Install lint tool for Go
 Downloads and installs the latest version of golangci-lint.
 
 ```
-kettle tools languages go golangci-lint [flags]
+kettle languages go golangci-lint [flags]
 ```
 
 ### Options
@@ -18,5 +18,5 @@ kettle tools languages go golangci-lint [flags]
 
 ### SEE ALSO
 
-* [kettle tools languages go](kettle_tools_languages_go.md)	 - Install Go programming language
+* [kettle languages go](kettle_languages_go.md)	 - Install Go programming language
 

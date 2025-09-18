@@ -2,8 +2,6 @@ package terminal
 
 // autoenv.go
 import (
-	"fmt"
-
 	"github.com/mpaxson/kettle/src/cmd/helpers"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +24,7 @@ var autoenvInstallCmd = &cobra.Command{
 	Long:  `Installs autoenv.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if helpers.CommandExists("autoenv") {
-			fmt.Println("autoenv is already installed.")
+			helpers.PrintInfo("autoenv is already installed.")
 			return
 		}
 

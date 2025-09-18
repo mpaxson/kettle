@@ -53,6 +53,7 @@ clean:
 
 docs:
 	@echo "Generating documentation..."
+	rm -r ./docs/cli
 	go run ./src/internal/tools/docgen -out ./docs/cli -format markdown
 
 lint:

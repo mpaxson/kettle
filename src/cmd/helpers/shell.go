@@ -230,6 +230,28 @@ func AddToProfileIfCmdExists(line string, bin string) bool {
 
 }
 
+func GetHomeDir() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		e := fmt.Errorf("could not get user home directory: %w", err)
+		PrintErrors(e)
+		panic(e)
+	}
+	return homeDir
+}
+
+	
+func GetCurrentDir() string {
+	curDir, err := os.Getwd()
+	if err != nil {
+		e := fmt.Errorf("could not get current directory: %w", err)
+		PrintErrors(e)
+		panic(e)
+	}
+	return curDir
+
+}
+
 // AddLineToKettleShellProfile adds a given line of text to the kettle-specific shell profile.
 func AddLineToKettleShellProfile(line string) bool {
 
@@ -283,3 +305,4 @@ func EnsureCompletionsSourced() bool {
 	sourceCmd := fmt.Sprintf("source %s", completionFile)
 	return AddLineToKettleShellProfile(sourceCmd)
 }
+

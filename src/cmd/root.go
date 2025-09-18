@@ -8,9 +8,13 @@ package cmd
 import (
 	"os"
 
+	"github.com/charmbracelet/log"
+
+	"github.com/mpaxson/kettle/src/cmd/languages"
 	"github.com/mpaxson/kettle/src/cmd/platforms/linux"
 	"github.com/mpaxson/kettle/src/cmd/sets"
 	"github.com/mpaxson/kettle/src/cmd/tools"
+
 	"github.com/spf13/cobra"
 )
 
@@ -42,6 +46,8 @@ func init() {
 	rootCmd.AddCommand(tools.ToolsCmd)
 	rootCmd.AddCommand(sets.SetsCmd)
 	rootCmd.AddCommand(linux.LinuxCmd)
+	rootCmd.AddCommand(languages.LanguagesCmd)
+
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
@@ -51,4 +57,10 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolP("verbose", "v", false, "Help message for verbose")
+	if verbose, _ := rootCmd.Flags().GetBool("verbose"); verbose {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.ErrorLevel)
+	}
 }

@@ -11,9 +11,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // DownloadFile downloads a file from the given URL and saves it to the specified path
+
 func DownloadFile(filepath string, url string) error {
 	// Create the file
 	out, err := os.Create(filepath)
@@ -28,7 +30,6 @@ func DownloadFile(filepath string, url string) error {
 		return fmt.Errorf("failed to download file: %w", err)
 	}
 	defer func() {
-
 		err := resp.Body.Close()
 		if err != nil {
 			PrintError("Failed to close response body", err)
@@ -45,6 +46,10 @@ func DownloadFile(filepath string, url string) error {
 		return fmt.Errorf("failed to save file: %w", err)
 	}
 
+	err = os.Chmod(filepath, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to make file executable: %w", err)
+	}
 	return nil
 }
 
@@ -316,4 +321,34 @@ func extractFromDeb(archivePath, destDir, binaryName string) error {
 	// In a full implementation, you'd extract the data.tar.* from the .deb
 	// and then extract the binary from that
 	return fmt.Errorf("deb extraction not yet implemented - please use tar.gz version")
+}
+
+// Download and install a script from a url
+func DownloadAndRunInstallScript(url string, filename string) error {
+	curDir := GetCurrentDir()
+
+	shScriptPath := filepath.Join(curDir, filename)
+	if err != nil {
+		PrintError("Failed to get latest NVM release info", err)
+		return err
+	}
+
+	if err := DownloadFile(shScriptPath, url); err != nil {
+		PrintError("Failed to download install script", err)
+		return err
+	}
+	const halfSecond = 500 * time.Millisecond
+	time.Sleep(halfSecond)
+
+	cmd := fmt.Sprintf("cat %s | bash", shScriptPath)
+	if err := RunCmd(cmd); err != nil {
+		PrintError("Failed to run install script", err)
+		return err
+	}
+	err := os.Remove(shScriptPath)
+	if err != nil {
+		PrintError("Failed to remove temporary script", err)
+		return err
+	}
+	return nil
 }

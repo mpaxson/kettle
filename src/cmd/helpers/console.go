@@ -10,8 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	log "github.com/charmbracelet/log"
@@ -39,100 +37,41 @@ var (
 
 type outputMsg string
 
-type model struct {
-	spinner spinner.Model
-	output  string
-	done    bool
-	err     error
-}
-
-func (m model) Init() tea.Cmd {
-	return m.spinner.Tick
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case spinner.TickMsg: // ✅ use spinner.TickMsg, not tea.TickMsg
-		if m.done {
-			return m, tea.Quit
-		}
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
-	case outputMsg:
-		m.output = string(msg)
-		return m, nil
-	}
-	return m, nil
-}
-
-func (m model) View() string {
-	if m.done {
-		if m.err != nil {
-			return errorStyle.Render("✗ " + m.err.Error())
-		}
-		return successStyle.Render("✓ Done!")
-	}
-	s := infoStyle.Render(m.spinner.View() + " Running task...")
-	if m.output != "" {
-		s += "\n" + m.output
-	}
-	return s
-}
-
 // RunCmd runs a bash command with a spinner and displays the output.
 func RunCmd(command string) error {
-	s := spinner.New()
-	s.Spinner = spinner.Dot
-	m := model{spinner: s}
 
-	// Start the spinner program
-	p := tea.NewProgram(m)
-	go func() {
-		var cmd *exec.Cmd
-		if strings.HasPrefix(command, "sudo") {
-			pw, err := getSudoPassword()
-			if err != nil {
-				m.err = err
-				p.Send(tea.QuitMsg{})
-				return
-			}
-			cmd = exec.Command("sudo", "-S", "bash", "-c", command)
-			cmd.Stdin = strings.NewReader(pw)
-		} else {
-			cmd = exec.Command("bash", "-c", command)
-		}
-
-		stdout, _ := cmd.StdoutPipe()
-		stderr, _ := cmd.StderrPipe()
-
-		err := cmd.Start()
+	var cmd *exec.Cmd
+	if strings.HasPrefix(command, "sudo") {
+		pw, err := getSudoPassword()
 		if err != nil {
-			m.err = err
-			p.Send(tea.QuitMsg{})
-			return
+			e := fmt.Errorf("failed to get sudo password: %w", err)
+			PrintErrors(e)
+			return e
 		}
+		cmd = exec.Command("sudo", "-S", "bash", "-c", command)
+		cmd.Stdin = strings.NewReader(pw)
+	} else {
+		cmd = exec.Command("bash", "-c", command)
+	}
 
-		scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
-		go func() {
-			for scanner.Scan() {
-				p.Send(outputMsg(scanner.Text()))
-			}
-		}()
+	stdout, _ := cmd.StdoutPipe()
+	stderr, _ := cmd.StderrPipe()
 
-		err = cmd.Wait()
-
-		m.done = true
-		m.err = err
-
-		// force quit bubbletea loop
-		p.Send(tea.QuitMsg{})
-	}()
-
-	if _, err := p.Run(); err != nil {
+	err := cmd.Start()
+	if err != nil {
 		return err
 	}
-	return nil
+
+	scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
+	go func() {
+		for scanner.Scan() {
+			fmt.Println(outputMsg(scanner.Text()))
+		}
+	}()
+
+	err = cmd.Wait()
+
+	return err
 }
 
 var (
@@ -179,6 +118,8 @@ func PrintError(msg string, err ...error) {
 }
 
 func PrintSuccess(msg string) {
+	log.Info(msg)
+
 	fmt.Println(successStyle.Render("✓ " + msg))
 }
 

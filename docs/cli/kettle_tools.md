@@ -20,6 +20,5 @@ to quickly create a Cobra application.
 ### SEE ALSO
 
 * [kettle](kettle.md)	 - A brief description of your application
-* [kettle tools languages](kettle_tools_languages.md)	 - Commands for installing and managing programming languages
 * [kettle tools terminal](kettle_tools_terminal.md)	 - A brief description of your command
 
