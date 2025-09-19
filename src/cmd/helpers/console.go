@@ -45,7 +45,6 @@ var (
 			Foreground(lipgloss.Color("12"))
 )
 
-
 // RunCmd runs a bash command with TUI output and displays the results in panels.
 // Optional output parameter controls whether to print command output (default: true)
 func RunCmd(command string, output ...bool) error {

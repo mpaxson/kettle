@@ -53,11 +53,16 @@ clean:
 
 docs:
 	@echo "Generating documentation..."
-	rm -r ./docs/cli
+	rm -r ./docs/cli || true
 	go run ./src/internal/tools/docgen -out ./docs/cli -format markdown
 
-lint:
+format: deps
+	@echo "Formatting code..."
+	$(GOCMD) fmt ./...
+
+lint: format
 	@echo "Linting..."
+
 	golangci-lint run
 
 
