@@ -40,14 +40,48 @@ func IsDarwin() bool {
 	return isDarwin
 }
 
-// CommandExists checks if a command is in the PATH.
+// CommandExists checks if a command is in the PATH or available as a shell function/builtin.
 func CommandExists(cmd string) bool {
+	shellInfo := GetShellInfo()
+	// First try exec.LookPath for regular binaries
 	_, err := exec.LookPath(cmd)
-	val := err == nil
-	if val {
-		PrintInfo(fmt.Sprintf("Command '%s' exists.", cmd))
+	if err == nil {
+		PrintInfo(fmt.Sprintf("Command '%s' exists as binary.", cmd))
+		return true
 	}
-	return val
+	cmdStr := fmt.Sprintf("command -v %s", cmd)
+
+	err = RunCmd(cmdStr, false)
+	if err == nil {
+		PrintInfo(fmt.Sprintf("Command '%s' exists", cmd))
+		return true
+	}
+
+	// Use interactive shell to check for functions and builtins
+	// The -i flag ensures we load shell functions like nvm
+	cmdStr = fmt.Sprintf("%s -c 'source %s; %s'", shellInfo.ShellBinPath, shellInfo.ShellRCPath, cmdStr)
+	err = RunCmd(cmdStr)
+	if err != nil {
+		return false
+	}
+
+	// PrintInfo(fmt.Sprintf("Command '%s' exists as shell function.", cmd))
+
+	// // Check if output is not empty and not just whitespace
+	// result := strings.TrimSpace(string(output))
+	// if len(result) > 0 {
+	// 	// Check if it's a function (functions typically contain newlines or "function" keyword)
+	// 	if strings.Contains(result, "\n") || strings.Contains(result, cmd) {
+	// 		PrintInfo(fmt.Sprintf("Command '%s' exists as shell function.", cmd))
+	// 		return true
+	// 	} else {
+	// 		PrintInfo(fmt.Sprintf("Command '%s' exists (%s).", cmd, result))
+	// 		return true
+	// 	}
+	// }
+
+	PrintInfo(fmt.Sprintf("Command '%s' does not exist.", cmd))
+	return false
 }
 
 func IsUbuntuVersion(versionPrefix string) bool {
@@ -83,4 +117,12 @@ func IsUbuntu26() bool {
 		isUbuntu26 = IsUbuntuVersion("26.04")
 	})
 	return isUbuntu26
+}
+
+func RunCmdWithShellProfile(command string) error {
+	shellInfo := GetShellInfo()
+	// Use interactive shell to ensure profile is loaded
+	cmdStr := fmt.Sprintf("%s -c 'source %s; %s'", shellInfo.ShellBinPath, shellInfo.ShellRCPath, command)
+
+	return RunCmd(cmdStr)
 }

@@ -17,14 +17,24 @@ import (
 )
 
 var (
+	cmdStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("#555555")). // dark grey background
+			Foreground(lipgloss.Color("#AAAAAA")). // light text
+			Padding(0, 2)
+
 	successStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("10")).
-			Bold(true)
+			Bold(true).
+			Padding(0, 2).
+			Border(lipgloss.RoundedBorder(), true, true, true, true).
+			BorderForeground(lipgloss.Color("10"))
 
 	errorStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("9")).
-			Bold(true)
-
+			Bold(true).
+			Padding(0, 2).
+			Border(lipgloss.RoundedBorder(), true, true, true, true).
+			BorderForeground(lipgloss.Color("9"))
 	errorPanelStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder(), true).
 			BorderForeground(lipgloss.Color("9")).
@@ -35,10 +45,21 @@ var (
 			Foreground(lipgloss.Color("12"))
 )
 
-type outputMsg string
 
-// RunCmd runs a bash command with a spinner and displays the output.
-func RunCmd(command string) error {
+// RunCmd runs a bash command with TUI output and displays the results in panels.
+// Optional output parameter controls whether to print command output (default: true)
+func RunCmd(command string, output ...bool) error {
+	// Determine if we should print output (default: true)
+	shouldPrintOutput := true
+	if len(output) > 0 {
+		shouldPrintOutput = output[0]
+	}
+
+	// Start TUI if not already running
+	// Update status panel to show current command
+	if shouldPrintOutput {
+		PrintInfo(fmt.Sprintf("Running: %s", command))
+	}
 
 	var cmd *exec.Cmd
 	if strings.HasPrefix(command, "sudo") {
@@ -59,19 +80,36 @@ func RunCmd(command string) error {
 
 	err := cmd.Start()
 	if err != nil {
-		return err
+		v := fmt.Errorf("failed to start command: %w", err)
+		if shouldPrintOutput {
+			PrintErrors(v)
+		}
+		return v
 	}
 
 	scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
 	go func() {
 		for scanner.Scan() {
-			fmt.Println(outputMsg(scanner.Text()))
+			if shouldPrintOutput {
+				PrintCmdOutput(scanner.Text())
+			}
 		}
 	}()
 
 	err = cmd.Wait()
 
-	return err
+	if err != nil {
+		if shouldPrintOutput {
+			PrintError(fmt.Sprintf("Command failed: %s", command))
+		}
+		return err
+
+	}
+
+	if shouldPrintOutput {
+		PrintInfo(fmt.Sprintf("Completed: %s", command))
+	}
+	return nil
 }
 
 var (
@@ -114,34 +152,41 @@ func PrintError(msg string, err ...error) {
 
 	}
 	log.Error(msg)
-	fmt.Println(errorPanelStyle.Render("✗ " + msg))
+	fmt.Println(errorPanelStyle.Render("✗  " + msg))
 }
 
 func PrintSuccess(msg string) {
 	log.Info(msg)
 
-	fmt.Println(successStyle.Render("✓ " + msg))
+	fmt.Println(successStyle.Render("✓  " + msg))
 }
 
 func PrintInfo(msg string) {
 	log.Debug(msg)
-	fmt.Println(infoStyle.Render("ℹ " + msg))
+	fmt.Println(infoStyle.Render("ℹ  " + msg))
+}
+
+func PrintCmdOutput(msg string) {
+	log.Debug(msg)
+	fmt.Println(cmdStyle.Render(" ➜  CmdOut: " + msg))
 }
 
 // PromptYesNo prompts the user with a yes/no question and returns true for yes, false for no
 func PromptYesNo(question string) bool {
 	var confirm bool
 
+	fmt.Println(question)
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
-				Title("Do you want to continue?").
+				Title(question).
+				Description("Do you want to continue?").
 				Value(&confirm),
 		),
 	)
 
 	if err := form.Run(); err != nil {
-		fmt.Println("Error:", err)
+		PrintError("Error:", err)
 		return false
 	}
 

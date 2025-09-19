@@ -12,5 +12,5 @@ Commands for installing and managing programming languages
 
 * [kettle](kettle.md)	 - A brief description of your application
 * [kettle languages go](kettle_languages_go.md)	 - Install Go programming language
-* [kettle languages npm](kettle_languages_npm.md)	 - Node.js and npm related tools
+* [kettle languages node](kettle_languages_node.md)	 - Node.js and npm related tools
 

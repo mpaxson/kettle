@@ -2,6 +2,8 @@ package terminal
 
 // autoenv.go
 import (
+	"strings"
+
 	"github.com/mpaxson/kettle/src/cmd/helpers"
 	"github.com/spf13/cobra"
 )
@@ -18,41 +20,44 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 }
 
+func AddAutoenvToProfile() {
+	script := `if command -v npm >/dev/null; then
+  NPM_ROOT=$(npm root -g 2>/dev/null)
+  if [ -n "$NPM_ROOT" ] && [ -f "$NPM_ROOT/@hyperupcall/autoenv/activate.sh" ]; then
+    source "$NPM_ROOT/@hyperupcall/autoenv/activate.sh"
+  fi
+fi`
+
+	helpers.AddLineToKettleShellProfile(script)
+}
+
 var autoenvInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Installs autoenv",
 	Long:  `Installs autoenv.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if helpers.CommandExists("autoenv") {
-			helpers.PrintInfo("autoenv is already installed.")
-			return
+
+		if !helpers.CommandExists("git") {
+			helpers.PrintFail("git is not installed. Cannot install autoenv.")
 		}
 
-		if helpers.CommandExists("npm") {
-			err := helpers.RunCmd("npm install -g autoenv")
-			if err != nil {
-				helpers.PrintFail("Failed to install autoenv with npm")
-			}
-			return
-		}
+		err := helpers.RunCmd("git clone 'https://github.com/hyperupcall/autoenv' ~/.autoenv", false)
 
-		if helpers.IsDarwin() {
-			if !helpers.CommandExists("brew") {
-				helpers.PrintFail("Homebrew is not installed. Cannot install autoenv.")
-				return
-			}
-			err := helpers.RunCmd("brew install autoenv")
+		if err != nil && strings.Contains(err.Error(), "128") {
+			helpers.PrintInfo("autoenv is already cloned.")
+			err := helpers.RunCmd("cd ~/.autoenv; git pull", false)
 			if err != nil {
-				helpers.PrintFail("Failed to install autoenv with brew")
+				helpers.PrintError("Failed to update autoenv", err)
+			} else {
+				helpers.PrintSuccess("Updated autoenv.")
 			}
-		} else if helpers.IsUbuntu() {
-			err := helpers.RunCmd("sudo apt install -y autoenv")
-			if err != nil {
-				helpers.PrintFail("Failed to install autoenv with apt")
-			}
+
 		} else {
-			helpers.PrintFail("Unsupported OS. Only Ubuntu and macOS are supported.")
+			helpers.PrintError("Failed to clone autoenv repository", err)
+			panic(err)
 		}
+
+		helpers.AddLineToKettleShellProfile("source ~/.autoenv/activate.sh")
 	},
 }
 
